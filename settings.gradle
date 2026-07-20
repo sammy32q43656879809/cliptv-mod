@@ -10,3 +10,4 @@ pluginManagement {
 rootProject.name = "clapcraft-cliptv"
 include("common")
 include("fabric")
+include("neoforge")
