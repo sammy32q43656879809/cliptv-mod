@@ -114,7 +114,8 @@ public class ClipTVFabric implements ClientModInitializer {
             net.minecraft.client.texture.NativeImage img =
                     new net.minecraft.client.texture.NativeImage(
                             fb.textureWidth, fb.textureHeight, false);
-            net.minecraft.client.gl.GlConst.bindFramebuffer(fb.fbo);
+            com.mojang.blaze3d.platform.GlStateManager._glBindFramebuffer(
+                    org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER, fb.fbo);
             img.loadFromTextureImage(0, false);
             img.mirrorVertically();
 
@@ -123,8 +124,7 @@ public class ClipTVFabric implements ClientModInitializer {
             BufferedImage bi = new BufferedImage(iw, ih, BufferedImage.TYPE_INT_RGB);
             for (int y = 0; y < ih; y++) {
                 for (int x = 0; x < iw; x++) {
-                    // NativeImage.getColor returns ABGR in some versions, RGBA in others
-                    int abgr = img.getColor(x, y);
+                    int abgr = img.getPixelColor(x, y);
                     int r = (abgr >> 0)  & 0xFF;
                     int g = (abgr >> 8)  & 0xFF;
                     int b = (abgr >> 16) & 0xFF;
