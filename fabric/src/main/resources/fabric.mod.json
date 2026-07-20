@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "cliptv",
+  "version": "${version}",
+  "name": "ClipTV",
+  "description": "Record and share Minecraft gameplay clips directly in-game. Powered by ClapCraft.",
+  "authors": ["ClapCraft"],
+  "contact": {
+    "homepage": "https://clapcraft.net",
+    "issues": "https://discord.gg/clapcraft"
+  },
+  "license": "ARR",
+  "icon": "assets/cliptv/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.cliptv.fabric.ClipTVFabric"]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.4",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "suggests": {}
+}
