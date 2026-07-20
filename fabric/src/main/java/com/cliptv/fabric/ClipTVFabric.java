@@ -8,10 +8,9 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.text.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,12 +53,8 @@ public class ClipTVFabric implements ClientModInitializer {
                 .registerGlobalReceiver(ClipTVServerCommandPayload.ID, (payload, ctx) ->
                         ctx.client().execute(() -> handleServerCommand(payload.command())));
 
-        // Hook into the render loop for frame capture
-        WorldRenderEvents.END.register(context -> {
-            if (VideoRecorder.getState() == VideoRecorder.State.RECORDING || true /* always buffer */) {
-                captureCurrentFrame();
-            }
-        });
+        // Capture a frame at the end of every client tick (20 fps)
+        ClientTickEvents.END_CLIENT_TICK.register(client -> captureCurrentFrame());
 
         // Register client-side commands
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, access) -> {
@@ -109,31 +104,24 @@ public class ClipTVFabric implements ClientModInitializer {
         if (mc.world == null || mc.player == null) return;
 
         try {
-            Framebuffer fb = mc.getFramebuffer();
-            // Use Minecraft's NativeImage to read OpenGL framebuffer
-            net.minecraft.client.texture.NativeImage img =
-                    new net.minecraft.client.texture.NativeImage(
-                            fb.textureWidth, fb.textureHeight, false);
-            com.mojang.blaze3d.platform.GlStateManager._glBindFramebuffer(
-                    org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER, fb.fbo);
-            img.loadFromTextureImage(0, false);
-            img.mirrorVertically();
-
-            // Convert NativeImage (RGBA) to BufferedImage (RGB)
-            int iw = img.getWidth(), ih = img.getHeight();
-            BufferedImage bi = new BufferedImage(iw, ih, BufferedImage.TYPE_INT_RGB);
-            for (int y = 0; y < ih; y++) {
-                for (int x = 0; x < iw; x++) {
-                    int abgr = img.getColorArgb(x, y);
-                    int r = (abgr >> 0)  & 0xFF;
-                    int g = (abgr >> 8)  & 0xFF;
-                    int b = (abgr >> 16) & 0xFF;
-                    bi.setRGB(x, y, (r << 16) | (g << 8) | b);
+            // 1.21.11: screenshot capture is async via callback
+            net.minecraft.client.util.ScreenshotRecorder.takeScreenshot(
+                    mc.getFramebuffer(), img -> {
+                try {
+                    int iw = img.getWidth(), ih = img.getHeight();
+                    BufferedImage bi = new BufferedImage(iw, ih, BufferedImage.TYPE_INT_RGB);
+                    for (int y = 0; y < ih; y++) {
+                        for (int x = 0; x < iw; x++) {
+                            // getColorArgb returns standard ARGB — drop alpha
+                            bi.setRGB(x, y, img.getColorArgb(x, y) & 0xFFFFFF);
+                        }
+                    }
+                    img.close();
+                    VideoRecorder.onFrame(bi);
+                } catch (Exception ignored) {
                 }
-            }
-            img.close();
-            VideoRecorder.onFrame(bi);
-        } catch (Exception e) {
+            });
+        } catch (Throwable t) {
             // Don't spam logs — capture errors are transient
         }
     }
