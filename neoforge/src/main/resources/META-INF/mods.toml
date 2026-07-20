@@ -1,0 +1,12 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "ARR"
+
+[[mods]]
+modId       = "cliptv"
+version     = "${version}"
+displayName = "ClipTV"
+description = '''
+Record and share Minecraft gameplay clips directly in-game.
+Powered by ClapCraft. /clip saves last 120s, /rec toggles recording.
+'''
