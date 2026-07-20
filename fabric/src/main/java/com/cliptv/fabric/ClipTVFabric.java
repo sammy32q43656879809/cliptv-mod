@@ -124,7 +124,7 @@ public class ClipTVFabric implements ClientModInitializer {
             BufferedImage bi = new BufferedImage(iw, ih, BufferedImage.TYPE_INT_RGB);
             for (int y = 0; y < ih; y++) {
                 for (int x = 0; x < iw; x++) {
-                    int abgr = img.getPixelColor(x, y);
+                    int abgr = img.getColorArgb(x, y);
                     int r = (abgr >> 0)  & 0xFF;
                     int g = (abgr >> 8)  & 0xFF;
                     int b = (abgr >> 16) & 0xFF;
